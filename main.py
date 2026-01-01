@@ -31,12 +31,18 @@ async def add_channel_handler(client, message):
 async def remove_channel_handler(client, message):
     await remove_channel(client, message)
 
+@app.on_message(filters.group & filters.text)
+async def group_force_join(client, message):
+    await force_join_check(client, message)
+
+
 @app.on_callback_query(filters.regex("^recheck:"))
 async def recheck_handler(client, callback):
-    await callback.answer("🔍 Checking...")
-    fake_msg = callback.message
-    fake_msg.from_user = callback.from_user
-    await force_join_check(client, fake_msg)
+    await callback.answer("Checking...")
+    fake = callback.message
+    fake.from_user = callback.from_user
+    await force_join_check(client, fake)
+
     
 # Broadcast
 @app.on_message(filters.command("broadcast"))
