@@ -9,3 +9,5 @@ users = db.users
 
 # per-group force join settings
 group_settings = db.group_settings
+
+stats = db.stats
