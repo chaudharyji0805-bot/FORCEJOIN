@@ -53,5 +53,23 @@ async def broadcast_handler(client, message):
 async def cancel_handler(client, callback):
     await cancel_broadcast(client, callback)
 
+@app.on_message(filters.command("forceon") & filters.group)
+async def force_on(client, message):
+    await enable_force(client, message)
+
+@app.on_message(filters.command("forceoff") & filters.group)
+async def force_off(client, message):
+    await disable_force(client, message)
+
+@app.on_message(filters.command("listchannels") & filters.group)
+async def list_ch(client, message):
+    await list_channels(client, message)
+
+@app.on_message(filters.new_chat_members)
+async def bot_added(client, message):
+    for m in message.new_chat_members:
+        if m.is_self:
+            await notify_group_add(client, message.chat)
+
 print("🚀 Bot starting...")
 app.run()
