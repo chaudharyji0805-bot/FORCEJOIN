@@ -1,0 +1,14 @@
+{
+  "name": "Advanced Force Join Bot",
+  "description": "Enterprise Telegram Force Join Bot",
+  "env": {
+    "API_ID": {},
+    "API_HASH": {},
+    "BOT_TOKEN": {},
+    "MONGO_URI": {},
+    "OWNER_ID": {}
+  },
+  "formation": {
+    "worker": { "quantity": 1 }
+  }
+}
