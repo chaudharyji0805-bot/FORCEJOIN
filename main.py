@@ -2,6 +2,7 @@ from pyrogram import Client, filters
 from config import API_ID, API_HASH, BOT_TOKEN
 from plugins.start import start
 from plugins.broadcast import broadcast, cancel_broadcast
+from plugins.channels import add_channel, remove_channel
 
 app = Client(
     "forcejoinbot",
@@ -24,6 +25,14 @@ async def broadcast_handler(client, message):
 @app.on_callback_query(filters.regex("^cancel$"))
 async def cancel_handler(client, callback):
     await cancel_broadcast(client, callback)
+@app.on_message(filters.command("addchannel"))
+async def add_channel_handler(client, message):
+    await add_channel(client, message)
+
+
+@app.on_message(filters.command("removechannel"))
+async def remove_channel_handler(client, message):
+    await remove_channel(client, message)
 
 print("🚀 Bot starting...")
 app.run()
