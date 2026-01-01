@@ -12,11 +12,11 @@ from plugins.scheduler import scheduled_broadcast
 
 app = Client(
     "forcejoinbot",
-API_ID = int(os.environ.get("API_ID", "25266584"))
-API_HASH = os.environ.get("API_HASH", "051c368565939ecdbd8d5b37c26cc68e")
+API_ID = int(os.environ.get("API_ID", 0))
+API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 MONGO_URI = os.environ.get("MONGO_URI")
-OWNER_ID = int(os.environ.get("OWNER_ID", "7538572906"))
+OWNER_ID = int(os.environ.get("OWNER_ID", 0))
 
 )
 
