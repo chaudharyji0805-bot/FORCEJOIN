@@ -14,6 +14,9 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 
 MONGO_URI = os.environ.get("MONGO_URI", "")
 
+# Log group (supergroup ID, negative number)
+LOG_GROUP_ID = int(os.environ.get("LOG_GROUP_ID", "0"))
+
 # =========================
 # Admin / Owner
 # =========================
