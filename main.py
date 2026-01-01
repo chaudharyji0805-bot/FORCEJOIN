@@ -4,7 +4,7 @@ from plugins.force_join import force_join_check
 from plugins.start import start
 from plugins.broadcast import broadcast, cancel_broadcast
 from plugins.channels import add_channel, remove_channel
-
+from plugins.force_join import force_join_check
 app = Client(
     "forcejoinbot",
     api_id=API_ID,
@@ -31,6 +31,13 @@ async def add_channel_handler(client, message):
 async def remove_channel_handler(client, message):
     await remove_channel(client, message)
 
+@app.on_callback_query(filters.regex("^recheck:"))
+async def recheck_handler(client, callback):
+    await callback.answer("🔍 Checking...")
+    fake_msg = callback.message
+    fake_msg.from_user = callback.from_user
+    await force_join_check(client, fake_msg)
+    
 # Broadcast
 @app.on_message(filters.command("broadcast"))
 async def broadcast_handler(client, message):
