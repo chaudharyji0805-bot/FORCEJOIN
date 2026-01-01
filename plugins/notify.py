@@ -1,5 +1,17 @@
 from config import LOG_GROUP_ID
 
+async def notify_bot_start(client):
+    if not LOG_GROUP_ID:
+        return
+    try:
+        await client.send_message(
+            LOG_GROUP_ID,
+            "🚀 **Bot Started Successfully**\n\n"
+            "✅ Status: Online\n"
+            "♻️ Reason: Restart / Deploy / Crash Recovery"
+        )
+    except Exception:
+        pass
 
 async def notify_group_add(client, chat):
     if not LOG_GROUP_ID:
