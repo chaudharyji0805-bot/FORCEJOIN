@@ -2,6 +2,8 @@ from pyrogram.errors import UserNotParticipant
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ChatPermissions
 from database import group_settings, users
 from collections import defaultdict
+from plugins.stats_tracker import inc_message, inc_force_action
+
 import time
 
 # warning counter: (chat_id, user_id) -> count
@@ -12,6 +14,7 @@ FORCE_WARNINGS = {}
 
 MAX_WARNINGS = 3
 
+inc_message()
 
 def valid_url(url: str) -> bool:
     return bool(url) and url.startswith("https://t.me/")
@@ -102,6 +105,7 @@ async def force_join_check(client, message):
             f"⚠️ Warning: {WARN_COUNT[key]}/{MAX_WARNINGS}\n\n"
             f"➡️ Sab channels join karo, phir **I Joined** dabao."
         )
+inc_force_action()
 
         # delete old warning message
         old_msg = FORCE_WARNINGS.get(key)
