@@ -12,19 +12,25 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 # =========================
 MONGO_URI = os.environ.get("MONGO_URI", "")
 
-# Log group (supergroup ID, negative number like -100xxxxxxxxxx)
+# Log group (supergroup ID like -100xxxxxxxxxx) - optional
 LOG_GROUP_ID = int(os.environ.get("LOG_GROUP_ID", "0"))
 
 # =========================
-# Admin / Owner (Optional)
+# Owner / Admin (Optional)
 # =========================
-OWNER_ID = int(os.environ.get("OWNER_ID", "0"))
+OWNER_ID = int(os.environ.get("OWNER_ID", "0"))  # INT ✅
+
+# =========================
+# Support Links (Optional)
+# =========================
+# Examples:
+# SUPPORT_CHAT = "https://t.me/YourSupportChat"
+# SUPPORT_CHANNEL = "https://t.me/YourSupportChannel"
+SUPPORT_CHAT = os.environ.get("SUPPORT_CHAT", "https://t.me/Yaaro_kimehfill")
+SUPPORT_CHANNEL = os.environ.get("SUPPORT_CHANNEL", "https://t.me/BotzEmpire")
 
 # =========================
 # Optional Settings
 # =========================
-# Flood wait safety (seconds)
 BROADCAST_DELAY = float(os.environ.get("BROADCAST_DELAY", "0.05"))
-
-# Debug mode (0/1)
 DEBUG = bool(int(os.environ.get("DEBUG", "0")))
