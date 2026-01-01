@@ -10,7 +10,12 @@ async def broadcast(client, message):
         return await message.reply("Reply to a message")
 
     BROADCAST_RUNNING = True
-    msg = await message.reply("📢 Broadcasting...")
+   msg = await message.reply(
+    "📢 Broadcasting...",
+    reply_markup=InlineKeyboardMarkup([
+        [InlineKeyboardButton("❌ Cancel Broadcast", callback_data="cancel")]
+    ])
+)
 
     total = users.count_documents({})
     sent = 0
