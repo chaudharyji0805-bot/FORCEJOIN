@@ -20,5 +20,4 @@ async def broadcast_handler(client, message):
     await broadcast(client, message)
 
 print("🚀 Bot starting...")
-
 app.run()
