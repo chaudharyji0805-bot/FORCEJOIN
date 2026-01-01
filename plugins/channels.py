@@ -1,5 +1,5 @@
 from config import OWNER_ID
-from database import group_channels
+from database import group_settings
 
 
 def ensure_group(message):
