@@ -3,7 +3,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ChatPermi
 from database import group_settings, users
 from collections import defaultdict
 from plugins.stats_tracker import inc_message, inc_force_action
-
+from database import group_stats
 import time
 
 # warning counter: (chat_id, user_id) -> count
