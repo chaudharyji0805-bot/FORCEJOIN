@@ -2,56 +2,66 @@ from config import OWNER_ID
 from database import group_channels
 
 
-def _get_group(chat):
-    return chat.id if chat.type in ("group", "supergroup") else None
+def ensure_group(message):
+    if message.chat.type not in ("group", "supergroup"):
+        return False
+    return True
 
 
 async def add_channel(client, message):
+    # only owner
     if message.from_user.id != OWNER_ID:
         return
 
-    group_id = _get_group(message.chat)
-    if not group_id:
-        return await message.reply("❌ Use this command in a group")
+    # only group
+    if not ensure_group(message):
+        return await message.reply("❌ Ye command sirf GROUP me use hogi")
+
+    group_id = message.chat.id
 
     if len(message.command) < 2:
         return await message.reply(
-            "Usage:\n/addchannel @channel [invite_link]"
+            "Usage:\n/addchannel @channel [invite_link]\n\n"
+            "⚠️ Is command ko usi group me use karo jahan force join chahiye"
         )
 
     username = message.command[1].replace("@", "")
     invite = message.command[2] if len(message.command) > 2 else None
 
-    data = group_channels.find_one({"group_id": group_id}) or {
-        "group_id": group_id,
-        "channels": []
-    }
+    doc = group_channels.find_one({"group_id": group_id})
+    if not doc:
+        doc = {"group_id": group_id, "channels": []}
 
-    for ch in data["channels"]:
+    for ch in doc["channels"]:
         if ch["username"] == username:
-            return await message.reply("⚠️ Channel already added for this group")
+            return await message.reply("⚠️ Ye channel is group ke liye pehle se set hai")
 
-    data["channels"].append({
+    doc["channels"].append({
         "username": username,
         "invite": invite
     })
 
     group_channels.update_one(
         {"group_id": group_id},
-        {"$set": data},
+        {"$set": doc},
         upsert=True
     )
 
-    await message.reply(f"✅ @{username} added for this group")
+    await message.reply(
+        f"✅ **Force join set ho gaya**\n\n"
+        f"Group: `{group_id}`\n"
+        f"Channel: @{username}"
+    )
 
 
 async def remove_channel(client, message):
     if message.from_user.id != OWNER_ID:
         return
 
-    group_id = _get_group(message.chat)
-    if not group_id:
-        return
+    if not ensure_group(message):
+        return await message.reply("❌ Ye command sirf GROUP me use hogi")
+
+    group_id = message.chat.id
 
     if len(message.command) < 2:
         return await message.reply("Usage:\n/removechannel @channel")
@@ -63,4 +73,6 @@ async def remove_channel(client, message):
         {"$pull": {"channels": {"username": username}}}
     )
 
-    await message.reply(f"❌ @{username} removed from this group")
+    await message.reply(
+        f"❌ Channel @{username} **is group se remove** kar diya gaya"
+    )
