@@ -15,6 +15,8 @@ from plugins.notify import notify_group_add, notify_user_start, notify_force_set
 from plugins.notify import notify_bot_start
 from plugins.daily_report import daily_report
 from plugins.stats_tracker import init_stats
+from plugins.group_stats import group_stats_cmd
+
 
 app = Client(
     "forcejoinbot",
@@ -22,6 +24,10 @@ app = Client(
     api_hash=API_HASH,
     bot_token=BOT_TOKEN
 )
+
+@app.on_message(filters.group & filters.command("stats"))
+async def stats_handler(client, message):
+    await group_stats_cmd(client, message)
 
 @app.on_message(filters.command("help"))
 async def help_handler(client, message):
