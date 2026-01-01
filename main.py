@@ -1,25 +1,15 @@
 from pyrogram import Client, filters
 from config import API_ID, API_HASH, BOT_TOKEN
 
-# core features
 from plugins.force_join import force_join_check
 from plugins.start import start
 from plugins.broadcast import broadcast, cancel_broadcast
 
-# group force-join management
 from plugins.channels import add_channel, remove_channel
 from plugins.settings import enable_force, disable_force
 from plugins.listchannels import list_channels
 
-# help & inline UI
-from plugins.help import (
-    help_command,
-    HELP_TEXT_PRIVATE,
-    HELP_TEXT_GROUP,
-    close_button
-)
-
-# logging (log group)
+from plugins.help import help_command, HELP_TEXT_PRIVATE, close_button
 from plugins.notify import notify_group_add, notify_user_start, notify_force_set
 
 
@@ -30,32 +20,19 @@ app = Client(
     bot_token=BOT_TOKEN
 )
 
-# ─────────────────────────────
-# HELP COMMAND (PRIVATE + GROUP)
-# ─────────────────────────────
 @app.on_message(filters.command("help"))
 async def help_handler(client, message):
     await help_command(client, message)
 
-# ─────────────────────────────
-# GROUP FORCE JOIN (AUTO CHECK)
-# commands excluded so /help etc. not deleted
-# ─────────────────────────────
-@app.on_message(filters.group & filters.text & ~filters.command)
+@app.on_message(filters.group & filters.text & ~filters.regex(r"^/"))
 async def group_force_join(client, message):
     await force_join_check(client, message)
 
-# ─────────────────────────────
-# PRIVATE START (INLINE BUTTONS)
-# ─────────────────────────────
 @app.on_message(filters.private & filters.command("start"))
 async def start_handler(client, message):
     await notify_user_start(client, message.from_user)
     await start(client, message)
 
-# ─────────────────────────────
-# ADMIN: ADD / REMOVE CHANNEL (GROUP ONLY)
-# ─────────────────────────────
 @app.on_message(filters.group & filters.command("addchannel"))
 async def add_channel_handler(client, message):
     await add_channel(client, message)
@@ -66,9 +43,6 @@ async def add_channel_handler(client, message):
 async def remove_channel_handler(client, message):
     await remove_channel(client, message)
 
-# ─────────────────────────────
-# FORCE JOIN ON / OFF (PER GROUP)
-# ─────────────────────────────
 @app.on_message(filters.group & filters.command("forceon"))
 async def force_on_handler(client, message):
     await enable_force(client, message)
@@ -77,25 +51,16 @@ async def force_on_handler(client, message):
 async def force_off_handler(client, message):
     await disable_force(client, message)
 
-# ─────────────────────────────
-# LIST CHANNELS (CURRENT GROUP)
-# ─────────────────────────────
 @app.on_message(filters.group & filters.command("listchannels"))
 async def list_channels_handler(client, message):
     await list_channels(client, message)
 
-# ─────────────────────────────
-# BOT ADDED TO GROUP → LOG GROUP
-# ─────────────────────────────
 @app.on_message(filters.new_chat_members)
 async def bot_added_handler(client, message):
     for m in message.new_chat_members:
         if m.is_self:
             await notify_group_add(client, message.chat)
 
-# ─────────────────────────────
-# FORCE JOIN RECHECK BUTTON
-# ─────────────────────────────
 @app.on_callback_query(filters.regex("^recheck:"))
 async def recheck_handler(client, callback):
     await callback.answer("🔍 Checking...")
@@ -103,9 +68,6 @@ async def recheck_handler(client, callback):
     fake_message.from_user = callback.from_user
     await force_join_check(client, fake_message)
 
-# ─────────────────────────────
-# INLINE HELP / ABOUT / CLOSE
-# ─────────────────────────────
 @app.on_callback_query(filters.regex("^help$"))
 async def help_callback(client, callback):
     await callback.answer()
@@ -119,9 +81,7 @@ async def about_callback(client, callback):
     await callback.answer()
     await callback.message.edit_text(
         "ℹ️ **About Bot**\n\n"
-        "Ye ek advanced **Force Join Management Bot** hai.\n"
-        "Group admins ke liye banaya gaya hai.\n\n"
-        "Features:\n"
+        "Advanced Force Join Management Bot\n"
         "• Per-group force join\n"
         "• Auto mute after warnings\n"
         "• Inline recheck system\n"
@@ -137,9 +97,6 @@ async def close_callback(client, callback):
     except Exception:
         pass
 
-# ─────────────────────────────
-# BROADCAST
-# ─────────────────────────────
 @app.on_message(filters.command("broadcast"))
 async def broadcast_handler(client, message):
     await broadcast(client, message)
