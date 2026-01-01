@@ -1,6 +1,6 @@
 from config import OWNER_ID
 from database import group_settings
-
+from plugins.notify import notify_force_set
 
 def ensure_group(message):
     return message.chat.type in ("group", "supergroup")
