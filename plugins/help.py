@@ -1,3 +1,4 @@
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.enums import ChatType
 
 
@@ -15,35 +16,42 @@ group ke rules follow karna zaroori hai.
 HELP_TEXT_GROUP = """
 🤖 **Force Join Bot – Help (Group)**
 
-👤 **User Info**
-• Group me message bhejne se pehle
-  required channels join karna zaroori ho sakta hai.
-• "✅ I Joined" button dabakar dubara check kara sakte ho.
+👤 **Users**
+• Message bhejne se pehle required channels join karna zaroori ho sakta hai
+• "✅ I Joined" button se dubara check kar sakte ho
 
-👮 **Admin Commands (Group me hi use kare)**
-/addchannel @channel [invite_link]
-➜ Is group ke liye force join channel add kare
-
+👮 **Admins (Group me hi use kare)**
+/addchannel @channel [invite]
 /removechannel @channel
-➜ Is group se force join channel remove kare
-
 /listchannels
-➜ Is group ke sab force join channels dekhe
-
 /forceon
-➜ Is group me force join ENABLE kare
-
 /forceoff
-➜ Is group me force join DISABLE kare
 
-⚠️ **Rules**
-• 3 warning ke baad auto mute
-• Join karne ke baad auto unmute
+⚠️ Rules:
+• 3 warning → auto mute
+• Join ke baad auto unmute
 """
+
+
+def start_buttons():
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton("📖 Help", callback_data="help"),
+                InlineKeyboardButton("ℹ️ About", callback_data="about")
+            ]
+        ]
+    )
+
+
+def close_button():
+    return InlineKeyboardMarkup(
+        [[InlineKeyboardButton("❌ Close", callback_data="close")]]
+    )
 
 
 async def help_command(client, message):
     if message.chat.type == ChatType.PRIVATE:
-        await message.reply(HELP_TEXT_PRIVATE)
+        await message.reply(HELP_TEXT_PRIVATE, reply_markup=close_button())
     else:
-        await message.reply(HELP_TEXT_GROUP)
+        await message.reply(HELP_TEXT_GROUP, reply_markup=close_button())
