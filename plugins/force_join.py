@@ -1,44 +1,59 @@
 from pyrogram.errors import UserNotParticipant
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ChatPermissions
-from database import group_settings, users
 from collections import defaultdict
-from plugins.stats_tracker import inc_message, inc_force_action
-from database import group_stats
 import time
 
-# warning counter: (chat_id, user_id) -> count
-WARN_COUNT = defaultdict(int)
+from database import group_settings, users, group_stats
+from plugins.stats_tracker import inc_message, inc_force_action
 
-# last warning message id: (chat_id, user_id) -> msg_id
-FORCE_WARNINGS = {}
+
+# ─────────────────────────────
+# WARNINGS TRACKING
+# ─────────────────────────────
+WARN_COUNT = defaultdict(int)        # (chat_id, user_id) -> warnings
+FORCE_WARNINGS = {}                  # (chat_id, user_id) -> message_id
 
 MAX_WARNINGS = 3
 
-inc_message()
 
+# ─────────────────────────────
+# HELPERS
+# ─────────────────────────────
 def valid_url(url: str) -> bool:
     return bool(url) and url.startswith("https://t.me/")
 
 
+# ─────────────────────────────
+# MAIN FORCE JOIN CHECK
+# ─────────────────────────────
 async def force_join_check(client, message):
     user = message.from_user
     chat = message.chat
 
-    # safety checks
+    # basic safety
     if not user or chat.type not in ("group", "supergroup"):
         return True
 
-    # store user globally
+    # global stats
+    inc_message()
+
+    # per-group stats
+    group_stats.update_one(
+        {"group_id": chat.id},
+        {"$inc": {"messages": 1}},
+        upsert=True
+    )
+
+    # store user globally (for broadcast)
     users.update_one(
         {"user_id": user.id},
         {"$set": {"user_id": user.id}},
         upsert=True
     )
 
-    # get group settings
+    # load group force join settings
     settings = group_settings.find_one({"group_id": chat.id})
 
-    # if no force join set OR disabled → allow
     if not settings or not settings.get("enabled", True):
         return True
 
@@ -48,17 +63,19 @@ async def force_join_check(client, message):
 
     not_joined = []
 
-    # check all channels for this group
+    # check membership
     for ch in channels:
         try:
             await client.get_chat_member(ch["username"], user.id)
         except UserNotParticipant:
             not_joined.append(ch)
         except Exception:
-            # private channel / bot not member → skip
+            # private channel / bot not admin / inaccessible
             continue
 
-    # ❌ user NOT joined all channels
+    # ─────────────────────────────
+    # USER NOT JOINED REQUIRED CHANNELS
+    # ─────────────────────────────
     if not_joined:
         # delete user's message
         try:
@@ -69,8 +86,16 @@ async def force_join_check(client, message):
         key = (chat.id, user.id)
         WARN_COUNT[key] += 1
 
-        # auto mute after 3 warnings
-        if WARN_COUNT[key] > MAX_WARNINGS:
+        # count force action
+        inc_force_action()
+        group_stats.update_one(
+            {"group_id": chat.id},
+            {"$inc": {"actions": 1}},
+            upsert=True
+        )
+
+        # auto mute after MAX_WARNINGS
+        if WARN_COUNT[key] >= MAX_WARNINGS:
             try:
                 await client.restrict_chat_member(
                     chat.id,
@@ -84,11 +109,9 @@ async def force_join_check(client, message):
 
         # build join buttons
         buttons = []
-
         for ch in not_joined:
             invite = ch.get("invite")
             url = invite if valid_url(invite) else f"https://t.me/{ch['username']}"
-
             if valid_url(url):
                 buttons.append(
                     [InlineKeyboardButton(f"Join @{ch['username']}", url=url)]
@@ -105,9 +128,8 @@ async def force_join_check(client, message):
             f"⚠️ Warning: {WARN_COUNT[key]}/{MAX_WARNINGS}\n\n"
             f"➡️ Sab channels join karo, phir **I Joined** dabao."
         )
-inc_force_action()
 
-        # delete old warning message
+        # delete previous warning message
         old_msg = FORCE_WARNINGS.get(key)
         if old_msg:
             try:
@@ -124,22 +146,21 @@ inc_force_action()
         FORCE_WARNINGS[key] = warn.id
         return False
 
-    # ✅ user joined all channels successfully
+    # ─────────────────────────────
+    # USER JOINED ALL CHANNELS
+    # ─────────────────────────────
     key = (chat.id, user.id)
 
-    # reset warning count
     WARN_COUNT.pop(key, None)
 
-    # delete old warning message
-    old_msg = FORCE_WARNINGS.get(key)
+    old_msg = FORCE_WARNINGS.pop(key, None)
     if old_msg:
         try:
             await client.delete_messages(chat.id, old_msg)
         except Exception:
             pass
-        FORCE_WARNINGS.pop(key, None)
 
-    # unmute user if muted
+    # unmute user (if muted)
     try:
         await client.restrict_chat_member(
             chat.id,
