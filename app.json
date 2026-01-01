@@ -1,14 +1,17 @@
 {
   "name": "Advanced Force Join Bot",
-  "description": "Enterprise Telegram Force Join Bot",
+  "description": "Telegram Force Join Bot with MongoDB & Broadcast",
+  "keywords": ["telegram", "pyrogram", "bot"],
   "env": {
-    "API_ID": {},
-    "API_HASH": {},
-    "BOT_TOKEN": {},
-    "MONGO_URI": {},
-    "OWNER_ID": {}
+    "API_ID": { "required": true },
+    "API_HASH": { "required": true },
+    "BOT_TOKEN": { "required": true },
+    "MONGO_URI": { "required": true },
+    "OWNER_ID": { "required": true }
   },
   "formation": {
-    "worker": { "quantity": 1 }
+    "worker": {
+      "quantity": 1
+    }
   }
 }
