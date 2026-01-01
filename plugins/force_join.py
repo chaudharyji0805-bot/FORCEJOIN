@@ -2,6 +2,7 @@ from pyrogram.errors import UserNotParticipant
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ChatPermissions
 from database import group_channels, users
 from collections import defaultdict
+from database import group_settings
 import time
 
 WARN_COUNT = defaultdict(int)
@@ -120,4 +121,7 @@ async def force_join_check(client, message):
     except Exception:
         pass
 
+    return True
+settings = group_settings.find_one({"group_id": chat.id})
+if not settings or not settings.get("enabled", True):
     return True
