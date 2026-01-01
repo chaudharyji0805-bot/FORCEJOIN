@@ -43,6 +43,11 @@ async def remove_channel_handler(client, message):
 async def group_force_join(client, message):
     await force_join_check(client, message)
 
+@app.on_message(filters.new_chat_members)
+async def bot_added(client, message):
+    for m in message.new_chat_members:
+        if m.is_self:
+            await notify_group_add(client, message.chat)
 
 @app.on_callback_query(filters.regex("^recheck:"))
 async def recheck_handler(client, callback):
