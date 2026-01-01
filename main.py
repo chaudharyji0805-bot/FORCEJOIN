@@ -13,6 +13,8 @@ from plugins.help import help_command, HELP_TEXT_PRIVATE, close_button
 from plugins.notify import notify_group_add, notify_user_start, notify_force_set
 
 from plugins.notify import notify_bot_start
+from plugins.daily_report import daily_report
+from plugins.stats_tracker import init_stats
 
 app = Client(
     "forcejoinbot",
@@ -108,7 +110,9 @@ async def cancel_handler(client, callback):
 
 print("🚀 Bot starting...")
 
+init_stats()
 app.start()
+app.loop.create_task(daily_report(app))
 app.loop.run_until_complete(notify_bot_start(app))
 app.idle()
 app.stop()
