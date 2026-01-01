@@ -3,6 +3,7 @@ import os
 
 from pyrogram import Client, filters
 from config import *
+from database import users
 from plugins.start import start
 from plugins.broadcast import broadcast, cancel_broadcast
 from plugins.stats import inline_stats
@@ -11,11 +12,11 @@ from plugins.scheduler import scheduled_broadcast
 
 app = Client(
     "forcejoinbot",
-API_ID = int(os.environ.get("API_ID", 0))
-API_HASH = os.environ.get("API_HASH")
+API_ID = int(os.environ.get("API_ID", "25266584"))
+API_HASH = os.environ.get("API_HASH", "051c368565939ecdbd8d5b37c26cc68e")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 MONGO_URI = os.environ.get("MONGO_URI")
-OWNER_ID = int(os.environ.get("OWNER_ID", 0))
+OWNER_ID = int(os.environ.get("OWNER_ID", "7538572906"))
 
 )
 
