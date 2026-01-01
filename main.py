@@ -1,7 +1,7 @@
 from pyrogram import Client, filters
 
 from config import API_ID, API_HASH, BOT_TOKEN
-from plugins.start import start
+from start import start
 from plugins.broadcast import broadcast
 
 app = Client(
