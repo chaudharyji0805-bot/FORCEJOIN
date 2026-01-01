@@ -1,3 +1,8 @@
+from plugins.notify import (
+    notify_group_add,
+    notify_user_start,
+    notify_force_set
+)
 from pyrogram import Client, filters
 from config import API_ID, API_HASH, BOT_TOKEN
 from plugins.force_join import force_join_check
@@ -20,7 +25,9 @@ async def group_force_join(client, message):
 # Start (private)
 @app.on_message(filters.private & filters.command("start"))
 async def start_handler(client, message):
+    await notify_user_start(client, message.from_user)
     await start(client, message)
+
 
 # Admin commands
 @app.on_message(filters.command("addchannel"))
