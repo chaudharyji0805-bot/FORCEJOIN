@@ -1,6 +1,6 @@
 {
   "name": "Force Join Telegram Bot",
-  "description": "Advanced per-group Force Join Telegram Bot with warnings, auto mute, inline recheck & log group support.",
+  "description": "Advanced per-group Force Join Telegram Bot with warnings, auto mute, inline recheck, daily reports & log group support.",
   "repository": "https://github.com/chaudharyji0805-bot/FORCEJOIN",
   "keywords": [
     "telegram",
@@ -29,16 +29,15 @@
     },
     "LOG_GROUP_ID": {
       "description": "Log group ID (negative ID, bot must be admin there)",
-      "required": true
+      "required": false
     }
   },
   "formation": {
     "worker": {
       "quantity": 1,
-      "size": "eco"
+      "size": "basic"
     }
   },
-  "addons": [],
   "buildpacks": [
     {
       "url": "heroku/python"
