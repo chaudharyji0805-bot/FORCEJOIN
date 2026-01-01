@@ -12,6 +12,7 @@ from plugins.listchannels import list_channels
 from plugins.help import help_command, HELP_TEXT_PRIVATE, close_button
 from plugins.notify import notify_group_add, notify_user_start, notify_force_set
 
+from plugins.notify import notify_bot_start
 
 app = Client(
     "forcejoinbot",
@@ -106,4 +107,8 @@ async def cancel_handler(client, callback):
     await cancel_broadcast(client, callback)
 
 print("🚀 Bot starting...")
-app.run()
+
+app.start()
+app.loop.run_until_complete(notify_bot_start(app))
+app.idle()
+app.stop()
