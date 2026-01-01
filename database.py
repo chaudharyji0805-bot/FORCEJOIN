@@ -11,3 +11,5 @@ users = db.users
 group_settings = db.group_settings
 
 stats = db.stats
+
+group_stats = db.group_stats
