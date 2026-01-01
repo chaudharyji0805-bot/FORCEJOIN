@@ -10,6 +10,7 @@ from plugins.start import start
 from plugins.broadcast import broadcast, cancel_broadcast
 from plugins.channels import add_channel, remove_channel
 from plugins.force_join import force_join_check
+from plugins.notify import notify_group_add, notify_user_start, notify_force_set
 app = Client(
     "forcejoinbot",
     api_id=API_ID,
