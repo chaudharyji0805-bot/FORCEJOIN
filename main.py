@@ -171,17 +171,14 @@ async def broadcast_handler(client, message):
 async def cancel_handler(client, callback):
     await cancel_broadcast(client, callback)
 
+# ─────────────────────────────
+# STARTUP TASKS
+# ─────────────────────────────
+async def on_startup():
+    init_stats()
+    await notify_bot_start(app)
+    app.loop.create_task(daily_report(app))
 
-# ─────────────────────────────
-# STARTUP SEQUENCE
-# ─────────────────────────────
+
 print("🚀 Bot starting...")
-
-init_stats()                          # init DB stats
-app.start()                           # start bot
-app.loop.create_task(daily_report(app))  # daily uptime report
-app.loop.run_until_complete(
-    notify_bot_start(app)
-)                                    # log group start message
-app.idle()                            # keep bot alive
-app.stop()                            # graceful shutdown
+app.run(on_startup())
