@@ -43,15 +43,6 @@ app = Client(
 )
 
 
-# ─────────────────────────────
-# STARTUP HOOK (VERY IMPORTANT)
-# ─────────────────────────────
-@app.on_started()
-async def on_started(client):
-    init_stats()
-    await notify_bot_start(client)
-    asyncio.create_task(daily_report(client))
-
 
 # ─────────────────────────────
 # HEALTH CHECK
@@ -194,5 +185,19 @@ async def cancel_handler(client, callback):
 # ─────────────────────────────
 # RUN BOT
 # ─────────────────────────────
+import asyncio
+
 print("🚀 Bot starting...")
+
+# init DB stats (safe to call before run)
+init_stats()
+
+async def startup_tasks():
+    await notify_bot_start(app)
+    asyncio.create_task(daily_report(app))
+
+# schedule startup tasks on event loop
+asyncio.get_event_loop().create_task(startup_tasks())
+
+# start bot (Pyrogram v2 correct way)
 app.run()
