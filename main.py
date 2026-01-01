@@ -1,28 +1,24 @@
 from pyrogram import Client, filters
-from config import *
-from database import users
+
+from config import API_ID, API_HASH, BOT_TOKEN
 from plugins.start import start
-from plugins.broadcast import broadcast, cancel_broadcast
-from plugins.stats import inline_stats
-from plugins.admin_panel import admin_panel
-from plugins.scheduler import scheduled_broadcast
+from plugins.broadcast import broadcast
 
 app = Client(
     "forcejoinbot",
-API_ID = int(os.environ.get("API_ID", 0))
-API_HASH = os.environ.get("API_HASH")
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
-MONGO_URI = os.environ.get("MONGO_URI")
-OWNER_ID = int(os.environ.get("OWNER_ID", 0))
-
+    api_id=API_ID,
+    api_hash=API_HASH,
+    bot_token=BOT_TOKEN
 )
 
-app.on_message(filters.command("start"))(start)
-app.on_message(filters.command("panel"))(admin_panel)
-app.on_message(filters.command("broadcast"))(broadcast)
-app.on_message(filters.command("schedule"))(scheduled_broadcast)
+@app.on_message(filters.command("start"))
+async def start_handler(client, message):
+    await start(client, message)
 
-app.on_callback_query(filters.regex("stats"))(inline_stats)
-app.on_callback_query(filters.regex("cancel"))(cancel_broadcast)
+@app.on_message(filters.command("broadcast"))
+async def broadcast_handler(client, message):
+    await broadcast(client, message)
+
+print("🚀 Bot starting...")
 
 app.run()
