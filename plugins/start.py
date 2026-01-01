@@ -1,13 +1,19 @@
+from plugins.help import start_buttons
 from database import users
+
 
 async def start(client, message):
     user = message.from_user
 
-    # save user in database (if not exists)
-    if not users.find_one({"user_id": user.id}):
-        users.insert_one({"user_id": user.id})
+    users.update_one(
+        {"user_id": user.id},
+        {"$set": {"user_id": user.id}},
+        upsert=True
+    )
 
     await message.reply(
-        "✅ Welcome!\n\n"
-        "Bot successfully started."
+        f"👋 **Welcome {user.first_name}!**\n\n"
+        f"Is bot ka use groups me force join manage karne ke liye hota hai.\n\n"
+        f"Neeche buttons se help dekho 👇",
+        reply_markup=start_buttons()
     )
