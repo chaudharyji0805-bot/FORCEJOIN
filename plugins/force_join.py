@@ -1,19 +1,15 @@
 from pyrogram.errors import UserNotParticipant
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ChatPermissions
-from database import channels
+from database import group_channels, users
 from collections import defaultdict
 import time
 
-# track warnings per user per chat
 WARN_COUNT = defaultdict(int)
-
-# store last warning message id
 FORCE_WARNINGS = {}
-
 MAX_WARNINGS = 3
 
 
-def valid_url(url: str) -> bool:
+def valid_url(url):
     return bool(url) and url.startswith("https://t.me/")
 
 
@@ -24,30 +20,36 @@ async def force_join_check(client, message):
     if not user or chat.type not in ("group", "supergroup"):
         return True
 
+    # store user globally
+    users.update_one(
+        {"user_id": user.id},
+        {"$set": {"user_id": user.id}},
+        upsert=True
+    )
+
+    config = group_channels.find_one({"group_id": chat.id})
+    if not config or not config.get("channels"):
+        return True  # no force join for this group
+
     not_joined = []
 
-    for ch in channels.find({}):
+    for ch in config["channels"]:
         try:
             await client.get_chat_member(ch["username"], user.id)
         except UserNotParticipant:
             not_joined.append(ch)
         except Exception:
-            # private channel / bot not member → skip check
             continue
 
-    # ❌ NOT JOINED CASE
     if not_joined:
-        # delete user message
         try:
             await message.delete()
         except Exception:
             pass
 
-        # increase warning count
         key = (chat.id, user.id)
         WARN_COUNT[key] += 1
 
-        # AUTO MUTE after 3 warnings
         if WARN_COUNT[key] > MAX_WARNINGS:
             try:
                 await client.restrict_chat_member(
@@ -58,33 +60,24 @@ async def force_join_check(client, message):
                 )
             except Exception:
                 pass
-
             return False
 
-        # build buttons
         buttons = []
         for ch in not_joined:
-            invite = ch.get("invite")
-            url = invite if valid_url(invite) else f"https://t.me/{ch['username']}"
-
+            url = ch.get("invite") if valid_url(ch.get("invite")) else f"https://t.me/{ch['username']}"
             if valid_url(url):
-                buttons.append(
-                    [InlineKeyboardButton(f"Join @{ch['username']}", url=url)]
-                )
+                buttons.append([InlineKeyboardButton(f"Join @{ch['username']}", url=url)])
 
-        # recheck button
         buttons.append(
             [InlineKeyboardButton("✅ I Joined", callback_data=f"recheck:{chat.id}")]
         )
 
         text = (
             f"🚫 **Force Join Required**\n\n"
-            f"👤 {user.mention}\n\n"
-            f"⚠️ Warning: {WARN_COUNT[key]}/{MAX_WARNINGS}\n\n"
-            f"➡️ Sab channels join karo, phir **I Joined** dabao."
+            f"👤 {user.mention}\n"
+            f"⚠️ Warning: {WARN_COUNT[key]}/{MAX_WARNINGS}"
         )
 
-        # delete old warning (if exists)
         old = FORCE_WARNINGS.get(key)
         if old:
             try:
@@ -92,22 +85,19 @@ async def force_join_check(client, message):
             except Exception:
                 pass
 
-        warn_msg = await client.send_message(
+        warn = await client.send_message(
             chat.id,
             text,
             reply_markup=InlineKeyboardMarkup(buttons)
         )
 
-        FORCE_WARNINGS[key] = warn_msg.id
+        FORCE_WARNINGS[key] = warn.id
         return False
 
-    # ✅ JOINED SUCCESS
+    # success
     key = (chat.id, user.id)
-
-    # reset warnings
     WARN_COUNT.pop(key, None)
 
-    # delete old warning
     old = FORCE_WARNINGS.get(key)
     if old:
         try:
@@ -116,7 +106,6 @@ async def force_join_check(client, message):
             pass
         FORCE_WARNINGS.pop(key, None)
 
-    # unmute if muted
     try:
         await client.restrict_chat_member(
             chat.id,
