@@ -174,11 +174,14 @@ async def cancel_handler(client, callback):
 # ─────────────────────────────
 # STARTUP TASKS
 # ─────────────────────────────
-async def on_startup():
-    init_stats()
-    await notify_bot_start(app)
-    app.loop.create_task(daily_report(app))
-
+import asyncio
 
 print("🚀 Bot starting...")
-app.run(on_startup())
+
+init_stats()
+
+async def startup_tasks():
+    await notify_bot_start(app)
+    asyncio.create_task(daily_report(app))
+
+app.run()
