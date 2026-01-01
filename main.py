@@ -1,6 +1,3 @@
-import os
-
-
 from pyrogram import Client, filters
 from config import *
 from database import users
