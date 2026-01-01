@@ -1,6 +1,7 @@
 # ─────────────────────────────
 # IMPORTS
 # ─────────────────────────────
+import asyncio
 from pyrogram import Client, filters
 from config import API_ID, API_HASH, BOT_TOKEN
 
@@ -40,6 +41,24 @@ app = Client(
     api_hash=API_HASH,
     bot_token=BOT_TOKEN
 )
+
+
+# ─────────────────────────────
+# STARTUP HOOK (VERY IMPORTANT)
+# ─────────────────────────────
+@app.on_started()
+async def on_started(client):
+    init_stats()
+    await notify_bot_start(client)
+    asyncio.create_task(daily_report(client))
+
+
+# ─────────────────────────────
+# HEALTH CHECK
+# ─────────────────────────────
+@app.on_message(filters.command("ping"))
+async def ping_handler(client, message):
+    await message.reply("PONG ✅")
 
 
 # ─────────────────────────────
@@ -171,17 +190,9 @@ async def broadcast_handler(client, message):
 async def cancel_handler(client, callback):
     await cancel_broadcast(client, callback)
 
-# ─────────────────────────────
-# STARTUP TASKS
-# ─────────────────────────────
-import asyncio
 
+# ─────────────────────────────
+# RUN BOT
+# ─────────────────────────────
 print("🚀 Bot starting...")
-
-init_stats()
-
-async def startup_tasks():
-    await notify_bot_start(app)
-    asyncio.create_task(daily_report(app))
-
 app.run()
