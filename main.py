@@ -1,3 +1,4 @@
+from plugins.help import help_command
 from pyrogram import Client, filters
 from config import API_ID, API_HASH, BOT_TOKEN
 
@@ -20,6 +21,11 @@ app = Client(
     api_hash=API_HASH,
     bot_token=BOT_TOKEN
 )
+
+
+@app.on_message(filters.command("help"))
+async def help_handler(client, message):
+    await help_command(client, message)
 
 # ─────────────────────────────
 # GROUP FORCE JOIN (AUTO CHECK)
