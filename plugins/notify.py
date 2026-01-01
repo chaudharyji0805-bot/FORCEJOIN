@@ -62,3 +62,5 @@ async def notify_force_set(client, chat, channel):
             f"📢 Channel: @{channel}",
             parse_mode=ParseMode.MARKDOWN
         )
+    except Exception:
+        pass
