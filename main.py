@@ -1,6 +1,5 @@
 import asyncio
 from pyrogram import Client, filters
-from pyrogram.utils import idle
 
 from config import API_ID, API_HASH, BOT_TOKEN
 from plugins.force_join import force_join_check
