@@ -1,6 +1,6 @@
 {
   "name": "Force Join Telegram Bot",
-  "description": "Advanced per-group Force Join Telegram Bot with warnings, auto mute, inline recheck, daily reports & log group support.",
+  "description": "Advanced per-group Force Join Telegram Bot with warnings, auto mute, inline recheck, daily reports and log group support.",
   "repository": "https://github.com/chaudharyji0805-bot/FORCEJOIN",
   "keywords": [
     "telegram",
@@ -25,6 +25,10 @@
     },
     "MONGO_URI": {
       "description": "MongoDB connection URI",
+      "required": true
+    },
+    "OWNER_ID": {
+      "description": "Bot owner Telegram user ID",
       "required": true
     },
     "LOG_GROUP_ID": {
