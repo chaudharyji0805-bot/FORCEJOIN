@@ -2,7 +2,10 @@ from database import group_stats
 
 
 async def group_stats_cmd(client, message):
-    data = group_stats.find_one({"group_id": message.chat.id})
+    try:
+        data = await group_stats.find_one({"group_id": message.chat.id})
+    except Exception:
+        data = None
 
     if not data:
         return await message.reply("📊 No stats available yet.")
