@@ -6,7 +6,6 @@ from plugins.force_join import force_join_check
 from plugins.start import start
 from plugins.broadcast import broadcast, cancel_broadcast
 from plugins.channels import add_channel, remove_channel
-from plugins.settings import enable_force, disable_force
 from plugins.listchannels import list_channels
 from plugins.help import help_command, HELP_TEXT_PRIVATE, close_button
 from plugins.notify import (
