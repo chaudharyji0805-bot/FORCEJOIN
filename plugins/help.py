@@ -11,8 +11,6 @@ HELP_TEXT_PRIVATE = """
 /addchannel @channel [invite_link]
 /removechannel @channel
 /listchannels
-/forceon
-/forceoff
 /stats
 """
 
@@ -26,8 +24,6 @@ HELP_TEXT_GROUP = """
 /addchannel @channel [invite_link]
 /removechannel @channel
 /listchannels
-/forceon
-/forceoff
 /stats
 """
 
