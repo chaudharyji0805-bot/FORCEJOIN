@@ -150,4 +150,21 @@ async def startup():
     await idle()
 
 print("🚀 Bot starting...")
-app.run(startup)
+
+async def on_startup():
+    try:
+        await init_stats()
+    except Exception as e:
+        print("Stats init error:", e)
+
+    try:
+        await notify_bot_start(app)
+    except Exception:
+        pass
+
+    try:
+        asyncio.create_task(daily_report(app))
+    except Exception as e:
+        print("Daily report error:", e)
+
+app.run(on_startup())
