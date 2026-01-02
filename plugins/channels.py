@@ -1,6 +1,7 @@
 import re
 from database import group_settings
 from pyrogram import filters
+from config import OWNER_ID
 
 def _clean_username(s: str) -> str:
     s = s.strip()
@@ -12,15 +13,21 @@ def _clean_username(s: str) -> str:
 def _is_valid_invite(url: str) -> bool:
     if not url:
         return False
-    return bool(re.match(r"^https://t\.me/(joinchat/|\+)[A-Za-z0-9_-]+$", url)) or url.startswith("https://t.me/")
+    return bool(
+        re.match(r"^https://t\.me/(joinchat/|\+)[A-Za-z0-9_-]+$", url)
+    ) or url.startswith("https://t.me/")
+
+async def _is_admin(client, message) -> bool:
+    if OWNER_ID and message.from_user.id == OWNER_ID:
+        return True
+    member = await client.get_chat_member(message.chat.id, message.from_user.id)
+    return member.status in ("administrator", "creator")
 
 async def add_channel(client, message):
     if not message.from_user:
         return
 
-    # only group admins
-    member = await client.get_chat_member(message.chat.id, message.from_user.id)
-    if member.status not in ("administrator", "owner"):
+    if not await _is_admin(client, message):
         return await message.reply("❌ Only admins can use this command.")
 
     if len(message.command) < 2:
@@ -29,10 +36,11 @@ async def add_channel(client, message):
     username = _clean_username(message.command[1])
     invite = message.command[2] if len(message.command) >= 3 else ""
 
-    doc = group_settings.find_one({"group_id": message.chat.id}) or {"group_id": message.chat.id, "channels": [], "enabled": True}
+    doc = await group_settings.find_one({"group_id": message.chat.id}) \
+        or {"group_id": message.chat.id, "channels": [], "enabled": True}
+
     channels = doc.get("channels", [])
 
-    # avoid duplicates
     if any(c.get("username") == username for c in channels):
         return await message.reply("ℹ️ This channel is already added.")
 
@@ -42,7 +50,7 @@ async def add_channel(client, message):
 
     channels.append(ch_doc)
 
-    group_settings.update_one(
+    await group_settings.update_one(
         {"group_id": message.chat.id},
         {"$set": {"channels": channels, "enabled": doc.get("enabled", True)}},
         upsert=True
@@ -54,22 +62,23 @@ async def remove_channel(client, message):
     if not message.from_user:
         return
 
-    member = await client.get_chat_member(message.chat.id, message.from_user.id)
-    if member.status not in ("administrator", "owner"):
+    if not await _is_admin(client, message):
         return await message.reply("❌ Only admins can use this command.")
 
     if len(message.command) < 2:
         return await message.reply("Usage:\n/removechannel @channel")
 
     username = _clean_username(message.command[1])
-    doc = group_settings.find_one({"group_id": message.chat.id}) or {}
+
+    doc = await group_settings.find_one({"group_id": message.chat.id}) or {}
     channels = doc.get("channels", [])
 
     new_channels = [c for c in channels if c.get("username") != username]
 
-    group_settings.update_one(
+    await group_settings.update_one(
         {"group_id": message.chat.id},
         {"$set": {"channels": new_channels}},
         upsert=True
     )
+
     await message.reply(f"✅ Removed: @{username}")
