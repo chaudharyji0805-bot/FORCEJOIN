@@ -26,38 +26,49 @@ app = Client(
     bot_token=BOT_TOKEN,
 )
 
-# -------------------- HEALTH --------------------
+# ---------------- STARTUP ----------------
+
+@app.on_startup()
+async def startup(client):
+    print("🚀 Bot started successfully")
+
+    try:
+        await init_stats()
+    except Exception as e:
+        print("Stats init error:", e)
+
+    try:
+        await notify_bot_start(client)
+    except Exception:
+        pass
+
+    try:
+        asyncio.create_task(daily_report(client))
+    except Exception as e:
+        print("Daily report error:", e)
+
+# ---------------- HANDLERS ----------------
 
 @app.on_message(filters.command("ping"))
 async def ping_handler(client, message):
     await message.reply("PONG ✅")
 
-# -------------------- HELP --------------------
-
 @app.on_message(filters.command("help"))
 async def help_handler(client, message):
     await help_command(client, message)
-
-# -------------------- GROUP STATS --------------------
 
 @app.on_message(filters.group & filters.command("stats"))
 async def stats_handler(client, message):
     await group_stats_cmd(client, message)
 
-# -------------------- FORCE JOIN CHECK --------------------
-
 @app.on_message(filters.group & filters.text & ~filters.regex(r"^/"))
 async def group_force_join(client, message):
     await force_join_check(client, message)
-
-# -------------------- START (PRIVATE) --------------------
 
 @app.on_message(filters.private & filters.command("start"))
 async def start_handler(client, message):
     await notify_user_start(client, message.from_user)
     await start(client, message)
-
-# -------------------- ADMIN COMMANDS --------------------
 
 @app.on_message(filters.group & filters.command("addchannel"))
 async def add_channel_handler(client, message):
@@ -81,22 +92,16 @@ async def force_off_handler(client, message):
 async def list_channels_handler(client, message):
     await list_channels(client, message)
 
-# -------------------- BOT ADDED --------------------
-
 @app.on_message(filters.new_chat_members)
 async def bot_added_handler(client, message):
     for m in message.new_chat_members:
         if m.is_self:
             await notify_group_add(client, message.chat)
 
-# -------------------- RECHECK CALLBACK --------------------
-
 @app.on_callback_query(filters.regex("^recheck:"))
 async def recheck_handler(client, callback):
     await callback.answer("🔍 Checking...")
     await force_join_check(client, callback.message, callback.from_user)
-
-# -------------------- INLINE BUTTONS --------------------
 
 @app.on_callback_query(filters.regex("^help$"))
 async def help_callback(client, callback):
@@ -110,7 +115,7 @@ async def help_callback(client, callback):
 async def about_callback(client, callback):
     await callback.answer()
     await callback.message.edit_text(
-        "ℹ️ **About Bot**\n\nAdvanced Force Join Management Bot",
+        "ℹ️ **About Bot**\n\nAdvanced Force Join Bot",
         reply_markup=close_button(),
     )
 
@@ -122,8 +127,6 @@ async def close_callback(client, callback):
     except Exception:
         pass
 
-# -------------------- BROADCAST --------------------
-
 @app.on_message(filters.command("broadcast"))
 async def broadcast_handler(client, message):
     await broadcast(client, message)
@@ -132,39 +135,7 @@ async def broadcast_handler(client, message):
 async def cancel_handler(client, callback):
     await cancel_broadcast(client, callback)
 
-# -------------------- STARTUP --------------------
+# ---------------- RUN ----------------
 
-async def startup():
-    try:
-        init_stats()
-    except Exception as e:
-        print("Stats init error:", e)
-
-    await notify_bot_start(app)
-
-    try:
-        asyncio.create_task(daily_report(app))
-    except Exception as e:
-        print("Daily report error:", e)
-
-    await idle()
-
-print("🚀 Bot starting...")
-
-async def on_startup():
-    try:
-        await init_stats()
-    except Exception as e:
-        print("Stats init error:", e)
-
-    try:
-        await notify_bot_start(app)
-    except Exception:
-        pass
-
-    try:
-        asyncio.create_task(daily_report(app))
-    except Exception as e:
-        print("Daily report error:", e)
-
-app.run(on_startup())
+print("🚀 Starting bot...")
+app.run()
