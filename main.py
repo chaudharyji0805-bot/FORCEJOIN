@@ -67,16 +67,6 @@ async def remove_channel_handler(client, message):
     await remove_channel(client, message)
 
 
-@app.on_message(filters.group & filters.command("forceon"))
-async def force_on_handler(client, message):
-    await enable_force(client, message)
-
-
-@app.on_message(filters.group & filters.command("forceoff"))
-async def force_off_handler(client, message):
-    await disable_force(client, message)
-
-
 @app.on_message(filters.group & filters.command("listchannels"))
 async def list_channels_handler(client, message):
     await list_channels(client, message)
