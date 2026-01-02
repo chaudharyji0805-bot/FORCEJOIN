@@ -4,29 +4,40 @@ from database import stats
 BOT_START_TIME = int(time.time())
 
 
-def init_stats():
-    if not stats.find_one({"_id": "global"}):
-        stats.insert_one({
-            "_id": "global",
-            "messages_checked": 0,
-            "force_actions": 0
-        })
+async def init_stats():
+    try:
+        doc = await stats.find_one({"_id": "global"})
+        if not doc:
+            await stats.insert_one({
+                "_id": "global",
+                "messages_checked": 0,
+                "force_actions": 0
+            })
+    except Exception:
+        pass
 
 
 def inc_message():
-    stats.update_one(
-        {"_id": "global"},
-        {"$inc": {"messages_checked": 1}},
-        upsert=True
-    )
+    # fire-and-forget (safe)
+    try:
+        stats.update_one(
+            {"_id": "global"},
+            {"$inc": {"messages_checked": 1}},
+            upsert=True
+        )
+    except Exception:
+        pass
 
 
 def inc_force_action():
-    stats.update_one(
-        {"_id": "global"},
-        {"$inc": {"force_actions": 1}},
-        upsert=True
-    )
+    try:
+        stats.update_one(
+            {"_id": "global"},
+            {"$inc": {"force_actions": 1}},
+            upsert=True
+        )
+    except Exception:
+        pass
 
 
 def get_uptime():
