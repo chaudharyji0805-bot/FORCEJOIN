@@ -47,12 +47,12 @@ async def force_join_check(client, message):
         pass
 
     settings = await group_settings.find_one({"group_id": chat.id})
-    if not settings or not settings.get("enabled", True):
-        return True
+if not settings:
+    return True
 
-    channels = settings.get("channels", [])
-    if not channels:
-        return True
+channels = settings.get("channels", [])
+if not channels:
+    return True
 
     not_joined = []
 
