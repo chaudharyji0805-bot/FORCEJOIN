@@ -23,10 +23,13 @@ async def force_join_check(client, message):
     if not user or not chat or chat.type not in ("group", "supergroup"):
         return True
 
-    # GLOBAL stats
-    await inc_message()
+    # global stats
+    try:
+        await inc_message()
+    except Exception:
+        pass
 
-    # GROUP stats (FIXED)
+    # group stats
     try:
         await group_stats.update_one(
             {"group_id": chat.id},
@@ -36,7 +39,7 @@ async def force_join_check(client, message):
     except Exception:
         pass
 
-    # USER save (FIXED)
+    # save user
     try:
         await users.update_one(
             {"user_id": user.id},
@@ -46,13 +49,14 @@ async def force_join_check(client, message):
     except Exception:
         pass
 
+    # get settings
     settings = await group_settings.find_one({"group_id": chat.id})
-if not settings:
-    return True
+    if not settings:
+        return True
 
-channels = settings.get("channels", [])
-if not channels:
-    return True
+    channels = settings.get("channels", [])
+    if not channels:
+        return True
 
     not_joined = []
 
@@ -64,8 +68,8 @@ if not channels:
         except Exception:
             continue
 
+    # user joined all channels
     if not not_joined:
-        # CLEANUP
         key = (chat.id, user.id)
         WARN_COUNT.pop(key, None)
 
@@ -77,7 +81,7 @@ if not channels:
                 pass
         return True
 
-    # USER NOT JOINED
+    # user not joined → enforce
     try:
         await message.delete()
     except Exception:
@@ -86,9 +90,8 @@ if not channels:
     key = (chat.id, user.id)
     WARN_COUNT[key] += 1
 
-    await inc_force_action()
-
     try:
+        await inc_force_action()
         await group_stats.update_one(
             {"group_id": chat.id},
             {"$inc": {"actions": 1}},
@@ -97,7 +100,7 @@ if not channels:
     except Exception:
         pass
 
-    # MUTE AFTER 3 WARNINGS
+    # mute after 3 warnings
     if WARN_COUNT[key] >= MAX_WARNINGS:
         try:
             await client.restrict_chat_member(
@@ -110,19 +113,19 @@ if not channels:
             pass
         return False
 
-    # BUTTONS
+    # build buttons
     buttons = []
     for ch in not_joined:
         invite = ch.get("invite")
         url = invite if valid_url(invite) else f"https://t.me/{ch['username']}"
         if valid_url(url):
-            buttons.append([
-                InlineKeyboardButton(f"Join @{ch['username']}", url=url)
-            ])
+            buttons.append(
+                [InlineKeyboardButton(f"Join @{ch['username']}", url=url)]
+            )
 
-    buttons.append([
-        InlineKeyboardButton("✅ I Joined", callback_data=f"recheck:{chat.id}")
-    ])
+    buttons.append(
+        [InlineKeyboardButton("✅ I Joined", callback_data=f"recheck:{chat.id}")]
+    )
 
     text = (
         f"🚫 **Force Join Required**\n\n"
