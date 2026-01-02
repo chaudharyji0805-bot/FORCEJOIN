@@ -61,12 +61,15 @@ async def force_join_check(client, message):
     not_joined = []
 
     for ch in channels:
-        try:
-            await client.get_chat_member(ch["username"], user.id)
-        except UserNotParticipant:
-            not_joined.append(ch)
-        except Exception:
-            continue
+    try:
+        await client.get_chat_member(ch["username"], user.id)
+    except UserNotParticipant:
+        not_joined.append(ch)
+    except Exception:
+        # 🔥 IMPORTANT FIX:
+        # Agar bot check nahi kar pa raha
+        # to user ko NOT JOINED maan lo
+        not_joined.append(ch)
 
     # user joined all channels
     if not not_joined:
