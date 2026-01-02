@@ -1,14 +1,15 @@
 from database import group_settings
 
 async def list_channels(client, message):
-    gid = message.chat.id
-    data = group_settings.find_one({"group_id": gid})
+    s = group_settings.find_one({"group_id": message.chat.id}) or {}
+    channels = s.get("channels", [])
 
-    if not data or not data.get("channels"):
-        return await message.reply("ℹ️ Is group me koi force join channel set nahi hai")
+    if not channels:
+        return await message.reply("ℹ️ No channels set for this group.")
 
-    text = "📢 **Force Join Channels (This Group)**\n\n"
-    for i, ch in enumerate(data["channels"], start=1):
-        text += f"{i}. @{ch['username']}\n"
+    lines = []
+    for i, ch in enumerate(channels, start=1):
+        invite = ch.get("invite") or ""
+        lines.append(f"{i}. @{ch['username']} {invite}")
 
-    await message.reply(text)
+    await message.reply("📌 **Channels for this group:**\n\n" + "\n".join(lines))
