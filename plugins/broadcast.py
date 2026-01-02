@@ -1,32 +1,32 @@
 import asyncio
-from database import users
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from config import OWNER_ID, BROADCAST_DELAY
+from database import users
 
 BROADCAST_RUNNING = False
-
 
 async def broadcast(client, message):
     global BROADCAST_RUNNING
 
+    if OWNER_ID and message.from_user and message.from_user.id != OWNER_ID:
+        return await message.reply("❌ Only owner can broadcast.")
+
     if not message.reply_to_message:
-        return await message.reply("Reply to a message to broadcast")
+        return await message.reply("Reply to a message to broadcast.")
 
     BROADCAST_RUNNING = True
-
-    msg = await message.reply(
-        "📢 Broadcasting...",
-        reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton("❌ Cancel Broadcast", callback_data="cancel")]]
-        )
-    )
+    msg = await message.reply("📢 Broadcasting...")
 
     total = users.count_documents({})
     sent = 0
 
+    cancel_btn = InlineKeyboardMarkup([[InlineKeyboardButton("❌ Cancel", callback_data="cancel")]])
+
+    await msg.edit("📢 Broadcasting started...", reply_markup=cancel_btn)
+
     for u in users.find({}):
         if not BROADCAST_RUNNING:
-            await msg.edit("❌ Broadcast Cancelled")
-            return
+            return await msg.edit("❌ Broadcast Cancelled")
 
         try:
             await message.reply_to_message.copy(u["user_id"])
@@ -34,19 +34,13 @@ async def broadcast(client, message):
         except Exception:
             pass
 
-        if total > 0 and sent % 10 == 0:
-            percent = int((sent / total) * 100)
-            await msg.edit(
-                f"📢 Broadcasting...\nProgress: {percent}%",
-                reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("❌ Cancel Broadcast", callback_data="cancel")]]
-                )
-            )
+        if total and sent % 25 == 0:
+            pct = int((sent / total) * 100)
+            await msg.edit(f"📢 Progress: {pct}%  ({sent}/{total})", reply_markup=cancel_btn)
 
-        await asyncio.sleep(0.05)
+        await asyncio.sleep(BROADCAST_DELAY)
 
-    await msg.edit(f"✅ Broadcast Done\nSent: {sent}")
-
+    await msg.edit(f"✅ Broadcast Done\nSent: {sent}/{total}")
 
 async def cancel_broadcast(client, callback):
     global BROADCAST_RUNNING
