@@ -1,5 +1,6 @@
 import asyncio
-from pyrogram import Client, filters, idle
+from pyrogram import Client, filters
+from pyrogram.utils import idle
 
 from config import API_ID, API_HASH, BOT_TOKEN
 from plugins.force_join import force_join_check
@@ -9,40 +10,56 @@ from plugins.channels import add_channel, remove_channel
 from plugins.settings import enable_force, disable_force
 from plugins.listchannels import list_channels
 from plugins.help import help_command, HELP_TEXT_PRIVATE, close_button
-from plugins.notify import notify_group_add, notify_user_start, notify_force_set, notify_bot_start
+from plugins.notify import (
+    notify_group_add,
+    notify_user_start,
+    notify_force_set,
+    notify_bot_start,
+)
 from plugins.stats_tracker import init_stats
 from plugins.daily_report import daily_report
 from plugins.group_stats import group_stats_cmd
 
-app = Client("forcejoinbot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+app = Client(
+    "forcejoinbot",
+    api_id=API_ID,
+    api_hash=API_HASH,
+    bot_token=BOT_TOKEN,
+)
 
-# health
+# -------------------- HEALTH --------------------
+
 @app.on_message(filters.command("ping"))
 async def ping_handler(client, message):
     await message.reply("PONG ✅")
 
-# help
+# -------------------- HELP --------------------
+
 @app.on_message(filters.command("help"))
 async def help_handler(client, message):
     await help_command(client, message)
 
-# per-group stats
+# -------------------- GROUP STATS --------------------
+
 @app.on_message(filters.group & filters.command("stats"))
 async def stats_handler(client, message):
     await group_stats_cmd(client, message)
 
-# auto force join (exclude commands)
+# -------------------- FORCE JOIN CHECK --------------------
+
 @app.on_message(filters.group & filters.text & ~filters.regex(r"^/"))
 async def group_force_join(client, message):
     await force_join_check(client, message)
 
-# start (private)
+# -------------------- START (PRIVATE) --------------------
+
 @app.on_message(filters.private & filters.command("start"))
 async def start_handler(client, message):
     await notify_user_start(client, message.from_user)
     await start(client, message)
 
-# admin commands (group)
+# -------------------- ADMIN COMMANDS --------------------
+
 @app.on_message(filters.group & filters.command("addchannel"))
 async def add_channel_handler(client, message):
     await add_channel(client, message)
@@ -65,33 +82,37 @@ async def force_off_handler(client, message):
 async def list_channels_handler(client, message):
     await list_channels(client, message)
 
-# bot added to group
+# -------------------- BOT ADDED --------------------
+
 @app.on_message(filters.new_chat_members)
 async def bot_added_handler(client, message):
     for m in message.new_chat_members:
         if m.is_self:
             await notify_group_add(client, message.chat)
 
-# recheck button
+# -------------------- RECHECK CALLBACK --------------------
+
 @app.on_callback_query(filters.regex("^recheck:"))
 async def recheck_handler(client, callback):
     await callback.answer("🔍 Checking...")
-    fake = callback.message
-    fake.from_user = callback.from_user
-    await force_join_check(client, fake)
+    await force_join_check(client, callback.message, callback.from_user)
 
-# start inline buttons
+# -------------------- INLINE BUTTONS --------------------
+
 @app.on_callback_query(filters.regex("^help$"))
 async def help_callback(client, callback):
     await callback.answer()
-    await callback.message.edit_text(HELP_TEXT_PRIVATE, reply_markup=close_button())
+    await callback.message.edit_text(
+        HELP_TEXT_PRIVATE,
+        reply_markup=close_button(),
+    )
 
 @app.on_callback_query(filters.regex("^about$"))
 async def about_callback(client, callback):
     await callback.answer()
     await callback.message.edit_text(
         "ℹ️ **About Bot**\n\nAdvanced Force Join Management Bot",
-        reply_markup=close_button()
+        reply_markup=close_button(),
     )
 
 @app.on_callback_query(filters.regex("^close$"))
@@ -102,7 +123,8 @@ async def close_callback(client, callback):
     except Exception:
         pass
 
-# broadcast
+# -------------------- BROADCAST --------------------
+
 @app.on_message(filters.command("broadcast"))
 async def broadcast_handler(client, message):
     await broadcast(client, message)
@@ -111,13 +133,22 @@ async def broadcast_handler(client, message):
 async def cancel_handler(client, callback):
     await cancel_broadcast(client, callback)
 
-# ✅ proper startup for pyrogram v2
-async def main():
-    init_stats()
-    async with app:
-        await notify_bot_start(app)
+# -------------------- STARTUP --------------------
+
+async def startup():
+    try:
+        init_stats()
+    except Exception as e:
+        print("Stats init error:", e)
+
+    await notify_bot_start(app)
+
+    try:
         asyncio.create_task(daily_report(app))
-        await idle()
+    except Exception as e:
+        print("Daily report error:", e)
+
+    await idle()
 
 print("🚀 Bot starting...")
-app.run(main())
+app.run(startup)
