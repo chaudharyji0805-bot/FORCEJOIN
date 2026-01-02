@@ -27,12 +27,11 @@ app = Client(
     bot_token=BOT_TOKEN,
 )
 
-# ================== 🔎 GLOBAL DEBUG ==================
-# ye handler sabse pehle chalega
-# agar ye log nahi aaya -> bot normal msg receive hi nahi kar raha
+# ================= DEBUG (GROUP MSG CHECK) =================
+# agar yeh log nahi aata -> bot group msgs receive nahi kar raha
 
 @app.on_message(filters.group, group=0)
-async def debug_all_group_messages(client, message):
+async def debug_group_messages(client, message):
     try:
         print(
             f"[DEBUG] GROUP MSG | chat={message.chat.id} "
@@ -59,8 +58,8 @@ async def stats_handler(client, message):
     await group_stats_cmd(client, message)
 
 
-# ================== 🔥 FORCE JOIN ==================
-# group=1 => debug ke baad ye chalega
+# ================= FORCE JOIN =================
+# group=1 -> debug ke baad chalega
 
 @app.on_message(filters.group & filters.text & ~filters.regex(r"^/"), group=1)
 async def group_force_join(client, message):
@@ -91,17 +90,20 @@ async def list_channels_handler(client, message):
     await list_channels(client, message)
 
 
-@app.on_message(filters.new_chat_members))
+# ================= BOT ADDED TO GROUP =================
+
+@app.on_message(filters.new_chat_members)
 async def bot_added_handler(client, message):
     for m in message.new_chat_members:
         if m.is_self:
             await notify_group_add(client, message.chat)
 
 
+# ================= CALLBACKS =================
+
 @app.on_callback_query(filters.regex("^recheck:"))
 async def recheck_handler(client, callback):
     await callback.answer("🔍 Checking...")
-    # fake message for recheck
     fake = callback.message
     fake.from_user = callback.from_user
     await force_join_check(client, fake)
