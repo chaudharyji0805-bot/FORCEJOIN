@@ -1,23 +1,16 @@
-import time
-from database import stats
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from database import users, channels, premium
 
-BOT_START_TIME = int(time.time())
-
-def init_stats():
-    stats.update_one(
-        {"_id": "global"},
-        {"$setOnInsert": {"messages_checked": 0, "force_actions": 0}},
-        upsert=True
+async def inline_stats(client, callback):
+    text = (
+        "📊 **Bot Statistics**\n\n"
+        f"👤 Users: {users.count_documents({})}\n"
+        f"💎 Premium: {premium.count_documents({})}\n"
+        f"📣 Channels: {channels.count_documents({})}"
     )
-
-def inc_message():
-    stats.update_one({"_id": "global"}, {"$inc": {"messages_checked": 1}}, upsert=True)
-
-def inc_force_action():
-    stats.update_one({"_id": "global"}, {"$inc": {"force_actions": 1}}, upsert=True)
-
-def get_uptime():
-    sec = int(time.time()) - BOT_START_TIME
-    h = sec // 3600
-    m = (sec % 3600) // 60
-    return f"{h}h {m}m"
+    await callback.message.edit(
+        text,
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔙 Back", callback_data="panel")]
+        ])
+    )
