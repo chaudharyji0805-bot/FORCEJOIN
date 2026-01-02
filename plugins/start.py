@@ -3,12 +3,20 @@ from pyrogram.enums import ParseMode
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
-# ✅ Change these links
 SUPPORT_CHAT_LINK = "https://t.me/Yaaro_kimehfill"
 SUPPORT_CHANNEL_LINK = "https://t.me/BotzEmpire"
 
 
+def safe(text: str) -> str:
+    if not text:
+        return ""
+    for ch in ("_", "*", "`", "[", "]", "(", ")"):
+        text = text.replace(ch, f"\\{ch}")
+    return text
+
+
 def start_buttons(bot_username: str):
+    bot_username = bot_username or ""
     return InlineKeyboardMarkup(
         [
             [
@@ -19,6 +27,7 @@ def start_buttons(bot_username: str):
                 InlineKeyboardButton(
                     "➕ Add me to Group",
                     url=f"https://t.me/{bot_username}?startgroup=true"
+                    if bot_username else "https://t.me"
                 )
             ],
             [
@@ -38,15 +47,21 @@ async def start(client, message):
 
     # save user in database
     if user:
-        users.update_one(
-            {"user_id": user.id},
-            {"$set": {"user_id": user.id}},
-            upsert=True
-        )
+        try:
+            await users.update_one(
+                {"user_id": user.id},
+                {"$set": {"user_id": user.id}},
+                upsert=True
+            )
+        except Exception:
+            pass
+
+    first_name = safe(user.first_name if user else "there")
+    bot_name = safe(bot.first_name or "Force Join Bot")
 
     text = (
-        f"👋 **Hey {user.first_name if user else 'there'}!**\n\n"
-        f"🤖 I am **{bot.first_name}** — an advanced **Force Join Manager Bot**.\n\n"
+        f"👋 **Hey {first_name}!**\n\n"
+        f"🤖 I am **{bot_name}** — an advanced **Force Join Bot**.\n\n"
         "✅ **Features:**\n"
         "• Per-group Force Join (multiple channels)\n"
         "• Auto delete message if not joined\n"
@@ -56,8 +71,8 @@ async def start(client, message):
         "📌 **Setup (in group):**\n"
         "1) Add me to your group & make me **Admin**\n"
         "2) Add channels:\n"
-        "   `/addchannel @channel` *(public)*\n"
-        "   `/addchannel @channel https://t.me/+invite` *(private)*\n"
+        "   `/addchannel @channel`\n"
+        "   `/addchannel @channel https://t.me/+invite`\n"
         "3) Enable: `/forceon`\n"
         "4) Check: `/listchannels`\n\n"
         "👇 Use buttons below:"
