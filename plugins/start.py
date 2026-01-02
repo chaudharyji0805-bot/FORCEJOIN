@@ -73,8 +73,7 @@ async def start(client, message):
         "2) Add channels:\n"
         "   `/addchannel @channel`\n"
         "   `/addchannel @channel https://t.me/+invite`\n"
-        "3) Enable: `/forceon`\n"
-        "4) Check: `/listchannels`\n\n"
+        "3) Check: `/listchannels`\n\n"
         "👇 Use buttons below:"
     )
 
