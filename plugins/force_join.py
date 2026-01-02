@@ -11,23 +11,46 @@ WARN_COUNT = defaultdict(int)   # (chat_id, user_id) -> warnings
 FORCE_WARNINGS = {}            # (chat_id, user_id) -> warning_message_id
 MAX_WARNINGS = 3
 
+
 def valid_url(url: str) -> bool:
     return bool(url) and url.startswith("https://t.me/")
 
-async def force_join_check(client, message):
-    user = message.from_user
+
+async def force_join_check(client, message, user_override=None):
+    """
+    user_override is used for callback recheck
+    """
+    user = user_override or message.from_user
     chat = message.chat
 
-    if not user or chat.type not in ("group", "supergroup"):
+    if not user or not chat or chat.type not in ("group", "supergroup"):
         return True
 
     inc_message()
 
-    group_stats.update_one({"group_id": chat.id}, {"$inc": {"messages": 1}}, upsert=True)
+    try:
+        await group_stats.update_one(
+            {"group_id": chat.id},
+            {"$inc": {"messages": 1}},
+            upsert=True,
+        )
+    except Exception:
+        pass
 
-    users.update_one({"user_id": user.id}, {"$set": {"user_id": user.id}}, upsert=True)
+    try:
+        await users.update_one(
+            {"user_id": user.id},
+            {"$set": {"user_id": user.id}},
+            upsert=True,
+        )
+    except Exception:
+        pass
 
-    settings = group_settings.find_one({"group_id": chat.id})
+    try:
+        settings = await group_settings.find_one({"group_id": chat.id})
+    except Exception:
+        settings = None
+
     if not settings or not settings.get("enabled", True):
         return True
 
@@ -36,9 +59,13 @@ async def force_join_check(client, message):
         return True
 
     not_joined = []
+
     for ch in channels:
+        username = ch.get("username")
+        if not username:
+            continue
         try:
-            await client.get_chat_member(ch["username"], user.id)
+            await client.get_chat_member(username, user.id)
         except UserNotParticipant:
             not_joined.append(ch)
         except Exception:
@@ -54,29 +81,46 @@ async def force_join_check(client, message):
         WARN_COUNT[key] += 1
 
         inc_force_action()
-        group_stats.update_one({"group_id": chat.id}, {"$inc": {"actions": 1}}, upsert=True)
+        try:
+            await group_stats.update_one(
+                {"group_id": chat.id},
+                {"$inc": {"actions": 1}},
+                upsert=True,
+            )
+        except Exception:
+            pass
 
-        # mute on 3rd warning (1 hour)
+        # mute on MAX_WARNINGS
         if WARN_COUNT[key] >= MAX_WARNINGS:
             try:
                 await client.restrict_chat_member(
                     chat.id,
                     user.id,
                     ChatPermissions(can_send_messages=False),
-                    until_date=int(time.time()) + 3600
+                    until_date=int(time.time()) + 3600,
                 )
             except Exception:
                 pass
             return False
 
         buttons = []
-        for ch in not_joined:
-            invite = ch.get("invite")
-            url = invite if valid_url(invite) else f"https://t.me/{ch['username']}"
-            if valid_url(url):
-                buttons.append([InlineKeyboardButton(f"Join @{ch['username']}", url=url)])
 
-        buttons.append([InlineKeyboardButton("✅ I Joined", callback_data=f"recheck:{chat.id}")])
+        for ch in not_joined:
+            username = ch.get("username")
+            invite = ch.get("invite")
+
+            url = invite if valid_url(invite) else (
+                f"https://t.me/{username}" if username else None
+            )
+
+            if url and valid_url(url):
+                buttons.append(
+                    [InlineKeyboardButton(f"Join @{username}", url=url)]
+                )
+
+        buttons.append(
+            [InlineKeyboardButton("✅ I Joined", callback_data=f"recheck:{chat.id}")]
+        )
 
         text = (
             f"🚫 **Force Join Required**\n\n"
@@ -92,11 +136,16 @@ async def force_join_check(client, message):
             except Exception:
                 pass
 
-        warn = await client.send_message(chat.id, text, reply_markup=InlineKeyboardMarkup(buttons))
+        warn = await client.send_message(
+            chat.id,
+            text,
+            reply_markup=InlineKeyboardMarkup(buttons),
+        )
         FORCE_WARNINGS[key] = warn.id
         return False
 
-    # joined all => cleanup + unmute
+    # ---------------- CLEANUP (JOINED ALL) ----------------
+
     key = (chat.id, user.id)
     WARN_COUNT.pop(key, None)
 
@@ -111,12 +160,7 @@ async def force_join_check(client, message):
         await client.restrict_chat_member(
             chat.id,
             user.id,
-            ChatPermissions(
-                can_send_messages=True,
-                can_send_media_messages=True,
-                can_send_other_messages=True,
-                can_add_web_page_previews=True
-            )
+            ChatPermissions(can_send_messages=True),
         )
     except Exception:
         pass
