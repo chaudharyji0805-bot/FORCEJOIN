@@ -1,10 +1,11 @@
-# Telegram Bot Framework
+# Telegram
 pyrogram==2.0.106
 tgcrypto==1.2.5
 
-# Database (MongoDB - ASYNC)
-motor==3.3.2
+# MongoDB (COMPATIBLE PAIR)
+motor==3.1.2
+pymongo==4.3.3
 dnspython==2.4.2
 
-# Environment variables (local / docker support)
+# Env
 python-dotenv==1.0.0
