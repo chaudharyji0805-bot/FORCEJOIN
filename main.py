@@ -26,27 +26,6 @@ app = Client(
     bot_token=BOT_TOKEN,
 )
 
-# ---------------- STARTUP ----------------
-
-@app.on_startup()
-async def startup(client):
-    print("🚀 Bot started successfully")
-
-    try:
-        await init_stats()
-    except Exception as e:
-        print("Stats init error:", e)
-
-    try:
-        await notify_bot_start(client)
-    except Exception:
-        pass
-
-    try:
-        asyncio.create_task(daily_report(client))
-    except Exception as e:
-        print("Daily report error:", e)
-
 # ---------------- HANDLERS ----------------
 
 @app.on_message(filters.command("ping"))
@@ -92,7 +71,7 @@ async def force_off_handler(client, message):
 async def list_channels_handler(client, message):
     await list_channels(client, message)
 
-@app.on_message(filters.new_chat_members)
+@app.on_message(filters.new_chat_members))
 async def bot_added_handler(client, message):
     for m in message.new_chat_members:
         if m.is_self:
@@ -135,7 +114,26 @@ async def broadcast_handler(client, message):
 async def cancel_handler(client, callback):
     await cancel_broadcast(client, callback)
 
+# ---------------- STARTUP TASKS ----------------
+
+async def background_tasks():
+    try:
+        await init_stats()
+    except Exception as e:
+        print("Stats init error:", e)
+
+    try:
+        await notify_bot_start(app)
+    except Exception:
+        pass
+
+    try:
+        asyncio.create_task(daily_report(app))
+    except Exception as e:
+        print("Daily report error:", e)
+
 # ---------------- RUN ----------------
 
 print("🚀 Starting bot...")
+asyncio.get_event_loop().create_task(background_tasks())
 app.run()
