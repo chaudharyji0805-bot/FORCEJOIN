@@ -46,6 +46,14 @@ def close_button():
 
 async def help_command(client, message):
     if message.chat.type == "private":
-        await message.reply(HELP_TEXT_PRIVATE, reply_markup=close_button())
+        await message.reply(
+            HELP_TEXT_PRIVATE,
+            reply_markup=close_button(),
+            disable_web_page_preview=True,
+        )
     else:
-        await message.reply(HELP_TEXT_GROUP, reply_markup=close_button())
+        await message.reply(
+            HELP_TEXT_GROUP,
+            reply_markup=close_button(),
+            disable_web_page_preview=True,
+        )
